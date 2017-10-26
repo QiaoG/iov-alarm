@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="
+       			http://www.springframework.org/schema/rabbit
+                http://www.springframework.org/schema/rabbit/spring-rabbit-1.2.xsd
+           	 	http://www.springframework.org/schema/beans
+				http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+				http://www.springframework.org/schema/context 
+				http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	<rabbit:connection-factory id="connectionFactory"
+		host="${mq.server.host}" username="${mq.username}" password="${mq.password}"
+		port="${mq.server.port}" />
+	<rabbit:admin connection-factory="connectionFactory" />
+	<rabbit:topic-exchange name="${mq.topic.exchange}"
+		durable="false" auto-delete="false" id="gpsTopicExchange">
+		<rabbit:bindings>
+			<rabbit:binding queue="${mq.queue.name}" pattern="*.*.*.*.U_REPT.0" />
+		</rabbit:bindings>
+	</rabbit:topic-exchange>
+	<rabbit:queue id="Qiov" durable="false" auto-delete="false"
+		exclusive="true" name="${mq.queue.name}" />
+	<rabbit:template exchange="gpsTopicExchange" id="rabbitTemplate"
+		connection-factory="connectionFactory">
+	</rabbit:template>
+	<rabbit:listener-container
+		connection-factory="connectionFactory" acknowledge="none"
+		prefetch="${mq.queue.prefetch}">
+		<rabbit:listener queues="${mq.queue.name}" ref="consumeMessage" />
+	</rabbit:listener-container>
+	<bean id="consumeMessage" class="com.hxht.iov.alarm.mq.RabbitMqConsumer"
+		autowire="byType">
+	</bean>
+</beans>
